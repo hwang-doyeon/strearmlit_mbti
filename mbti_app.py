@@ -1,7 +1,3 @@
-from streamlit.proto import ArrowVegaLiteChart_pb2
-from streamlit.proto import ArrowVegaLiteChart_pb2
-from mbti_app import col4
-from mbti_app import col3
 import streamlit as st
 import json
 import google.generativeai as genai
