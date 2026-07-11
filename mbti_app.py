@@ -76,7 +76,7 @@ if mbti_keys:
     with col2:
         gender = st.radio("나의 성별을 선택하세요:", ["남자", "여자"], horizontal=True)
         
-    # [추가] 2층 레이아웃: AI 얼굴(아이콘) 선택 리스트
+    # [추가] 2층 레이아웃: AI 얼굴(아이콘) 및 내 아이콘 선택 리스트
     icon_options = {
         "❓ 물음표": "❓",
         "👩 여자 사람": "👩",
@@ -106,21 +106,33 @@ if mbti_keys:
         "🌸 벚꽃": "🌸",
         "🍀 네잎클로버": "🍀",
         "🍔 햄버거": "🍔",
+        "🍕 피자": "🍕",
+        "🍓 딸기": "🍓",
         "☕ 커피": "☕",
         "🎸 기타": "🎸",
+        "🎮 게임기": "🎮",
         "🚗 자동차": "🚗",
         "✈️ 비행기": "✈️",
         "🧸 곰인형": "🧸",
         "🎈 풍선": "🎈",
-        "🎁 선물": "🎁"
+        "🎁 선물": "🎁",
+        "🏀 농구공": "🏀",
+        "⚽ 축구공": "⚽",
+        "🐧 펭귄": "🐧",
+        "🦉 부엉이": "🦉",
+        "🦊 여우": "🦊"
     }
     
-    col3, col4 = st.columns([1, 1])
+    col3, col4, col5 = st.columns([1, 1, 2])
     with col3:
-        selected_icon_name = st.selectbox("AI의 얼굴(아이콘)을 골라주세요:", list(icon_options.keys()), index=3)
-        ai_avatar = icon_options[selected_icon_name]
+        selected_ai_icon = st.selectbox("AI의 얼굴(아이콘):", list(icon_options.keys()), index=3)
+        ai_avatar = icon_options[selected_ai_icon]
         
     with col4:
+        selected_user_icon = st.selectbox("나의 얼굴(아이콘):", list(icon_options.keys()), index=0)
+        user_avatar = icon_options[selected_user_icon]
+        
+    with col5:
         situation = st.text_input(
             "장소나 분위기를 적어주세요:", 
             value="아늑한 카페", 
@@ -166,9 +178,9 @@ if mbti_keys:
 
     st.markdown("---")
 
-    # 기존 대화 출력 (선택한 ai_avatar 적용)
+    # 기존 대화 출력 (선택한 ai_avatar 및 user_avatar 적용)
     for msg in st.session_state.messages:
-        avatar = "user" if msg["role"] == "user" else ai_avatar
+        avatar = user_avatar if msg["role"] == "user" else ai_avatar
         with st.chat_message(msg["role"], avatar=avatar):
             if msg.get("is_edited"):
                 st.write(f"{msg['content']} *(수정됨)* ⚠️", help=f"🚨 원본 대답: {msg['original']}")
@@ -183,7 +195,7 @@ if mbti_keys:
         else:
             # 사용자 메시지 저장 및 출력
             st.session_state.messages.append({"role": "user", "content": user_input, "is_edited": False, "original": ""})
-            with st.chat_message("user"):
+            with st.chat_message("user", avatar=user_avatar):
                 st.markdown(user_input)
 
             try:
