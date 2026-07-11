@@ -174,7 +174,18 @@ if mbti_keys:
         st.session_state.current_mbti = selected
         st.session_state.current_gender = gender
         st.session_state.current_situation = situation
-        st.session_state.messages = [{"role": "assistant", "content": f"안녕! 난 {selected}야. 지금 우리 '{situation}'에 있네? 궁금한 거 있어? 😉", "is_edited": False, "original": ""}]
+        # 상황 텍스트 조사 처리 ("~중" 혹은 "~하는중" 인 경우 조사 변경)
+        sit_clean = situation.strip()
+        if sit_clean.endswith("하는중"):
+            sit_text = f"지금 우리 {sit_clean[:-3]}하고 있네?"
+        elif sit_clean.endswith("하는 중"):
+            sit_text = f"지금 우리 {sit_clean[:-4]}하고 있네?"
+        elif sit_clean.endswith("중"):
+            sit_text = f"지금 우리 {sit_clean[:-1]}하고 있네?"
+        else:
+            sit_text = f"지금 우리 '{sit_clean}'에 있네?"
+
+        st.session_state.messages = [{"role": "assistant", "content": f"안녕! 난 {selected}야. {sit_text} 궁금한 거 있어? 😉", "is_edited": False, "original": ""}]
 
     st.markdown("---")
 
