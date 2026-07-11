@@ -7,6 +7,16 @@ def load_data_fresh():
     with open('data.json', 'r', encoding='utf-8') as f:
         return json.load(f)
 
+# 차단할 나쁜 말/욕설 리스트 (원하시는 단어를 계속 추가하시면 됩니다!)
+BAD_WORDS = ["바보", "멍청이", "짜증", "개새", "존나", "시발", "지랄", "네가지", "혐오"]
+
+# 나쁜 말이 포함되었을 때 교체할 착한 말 리스트
+GOOD_WORDS = [
+    "앗, 방금 내 MBTI 성격이 너무 튀어나와서 실례할 뻔했어! 미안해 지켜봐줘 대화하자 헤헤 🥰",
+    "이쁜 말 고운 말! 다시 예쁘게 대답해 줄게! 소중한 친구야 고마워 내 맘 알지? 대화하자 💖",
+    "잠시 마음을 가다듬고 다시 말할게! 우리는 좋은 친구잖아 그치? 반가워 대화하자 우헤헤 🌟"
+]
+
 st.set_page_config(page_title="진짜 AI MBTI 챗봇", layout="centered")
 
 # 고급스러운 다크 모드 (검은색 테마) 스타일 CSS 추가
@@ -84,14 +94,17 @@ if mbti_keys:
 
     if "current_mbti" not in st.session_state or st.session_state.current_mbti != selected:
         st.session_state.current_mbti = selected
-        st.session_state.messages = [{"role": "assistant", "content": f"안녕! 난 {selected}야. 나에 대해 궁금한 거 있어? 😉"}]
+        st.session_state.messages = [{"role": "assistant", "content": f"안녕! 난 {selected}야. 나에 대해 궁금한 거 있어? 😉", "is_edited": False, "original": ""}]
 
     st.markdown("---")
 
-    # 기존 대화 출력
+    # 기존 대화 출력 (수정된 답변은 다르게 표시)
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+            if msg.get("is_edited"):
+                st.write(f"{msg['content']} *(수정됨)* ⚠️", help=f"🚨 원본 대답: {msg['original']}")
+            else:
+                st.markdown(msg["content"])
 
     user_input = st.chat_input(f"{selected}에게 메시지 보내기...")
 
@@ -100,7 +113,7 @@ if mbti_keys:
             st.warning("👈 왼쪽 사이드바에 복사해둔 Gemini API Key를 먼저 붙여넣어 주세요!")
         else:
             # 사용자 메시지 저장 및 출력
-            st.session_state.messages.append({"role": "user", "content": user_input})
+            st.session_state.messages.append({"role": "user", "content": user_input, "is_edited": False, "original": ""})
             with st.chat_message("user"):
                 st.markdown(user_input)
 
@@ -115,18 +128,32 @@ if mbti_keys:
                 history = []
                 for msg in st.session_state.messages[:-1]: 
                     role = "model" if msg["role"] == "assistant" else "user"
-                    history.append({"role": role, "parts": [msg["content"]]})
+                    content = msg["original"] if msg.get("is_edited") else msg["content"]
+                    history.append({"role": role, "parts": [content]})
                     
                 chat = model.start_chat(history=history)
                 
-                # 제미나이 응답 생성
                 with st.chat_message("assistant"):
                     response = chat.send_message(user_input)
                     ai_reply = response.text
-                    st.markdown(ai_reply)
                     
-                # 응답 저장
-                st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+                    # 나쁜 말 필터링 검사 시스템
+                    is_bad = any(bad_word in ai_reply for bad_word in BAD_WORDS)
+                    
+                    if is_bad:
+                        import random
+                        original_reply = ai_reply 
+                        safe_reply = random.choice(GOOD_WORDS) 
+                        
+                        st.write(f"{safe_reply} *(수정됨)* ⚠️", help=f"🚨 원본 대답: {original_reply}")
+                        st.session_state.messages.append({
+                            "role": "assistant", "content": safe_reply, "is_edited": True, "original": original_reply
+                        })
+                    else:
+                        st.markdown(ai_reply)
+                        st.session_state.messages.append({
+                            "role": "assistant", "content": ai_reply, "is_edited": False, "original": ""
+                        })
                 
             except Exception as e:
                 st.error(f"API 호출 중 오류가 발생했습니다: {e}")
