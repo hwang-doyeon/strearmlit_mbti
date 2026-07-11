@@ -8,7 +8,7 @@ def load_data_fresh():
         return json.load(f)
 
 # 차단할 나쁜 말/욕설 리스트 (원하시는 단어를 계속 추가하시면 됩니다!)
-BAD_WORDS = ["바보", "멍청이", "짜증", "개새", "존나", "시발", "지랄", "네가지", "혐오"]
+BAD_WORDS = ["바보", "멍청이", "짜증", "개새", "존나", "시발", "지랄", "네가지", "혐오", "새끼", "죽어", "미친놈"]
 
 # 나쁜 말이 포함되었을 때 교체할 착한 말 리스트
 GOOD_WORDS = [
@@ -59,7 +59,7 @@ except (FileNotFoundError, KeyError):
         st.caption("카드 등록이 필요 없는 무료 제미나이 키를 넣어주세요.")
 
 st.title("🧠 진짜 AI MBTI 빙의 챗봇")
-st.write("구글 제미나이가 문맥을 이해하고 사람처럼 똑똑하게 대답합니다!")
+st.write("MBTI, 성별, 그리고 원하는 상황과 장소를 마음대로 설정해 대화해 보세요!")
 
 try:
     data = load_data_fresh()
@@ -69,17 +69,35 @@ except Exception as e:
     mbti_keys = []
 
 if mbti_keys:
-    selected = st.selectbox("대화할 MBTI 친구를 고르세요:", mbti_keys)
+    # 레이아웃 구성
+    col1, col2 = st.columns(2)
+    with col1:
+        selected = st.selectbox("대화할 MBTI 친구를 고르세요:", mbti_keys)
+    with col2:
+        gender = st.radio("나의 성별을 선택하세요:", ["남자", "여자"], horizontal=True)
+        
+    # 주관식 상황/위치 설정 입력창
+    situation = st.text_input(
+        "현재 대화하고 있는 장소나 분위기를 적어주세요:", 
+        value="아늑한 카페", 
+        placeholder="예시: 비 내리는 수영장, 시끄러운 길 한복판, 어색한 소개팅 자리 등"
+    )
+
     info = data[selected]
     
     best_mbti = info.get('best', '알 수 없음')
     best_desc = data.get(best_mbti, {}).get('desc', '나와 잘 맞는')
 
-    # 제미나이에게 줄 페르소나 (역할 설정)
+    # 제미나이에게 줄 페르소나 (성별 + 주관식 상황 정보 주입)
     system_prompt = f"""
     너는 지금부터 '{selected}' 유형의 사람이야. AI가 아니라 실제 사람처럼 친근하게 대화해.
     
-    [너의 설정]
+    [현재 대화 환경 설정]
+    - 대화 상대방(유저)의 성별: '{gender}' (성별에 맞는 자연스러운 호칭과 리액션 사용)
+    - 대화가 이루어지는 장소/분위기: '{situation}' 
+      👉 매우 중요: 너는 지금 반드시 이 장소와 분위기 속에 있다고 생각하고 대화해야 해. 주변 환경(소음, 날씨, 장소의 특징 등)을 대화 내용에 적극적으로 반영해줘!
+    
+    [너의 기본 설정]
     - 성격 특징: {info['desc']}
     - 좋아하는 유형: {best_desc} 같은 성격의 {best_mbti}
     - 좋아하는 장소: {info['place']}
@@ -92,9 +110,15 @@ if mbti_keys:
     - 사용자의 말에 문맥을 파악해서 다양하고 자연스럽게 대답해. "아하 그렇구나" 같은 기계적인 대답은 절대 하지 마.
     """
 
-    if "current_mbti" not in st.session_state or st.session_state.current_mbti != selected:
+    # MBTI, 성별, 혹은 설정된 상황이 바뀌면 대화 기록 초기화
+    if ("current_mbti" not in st.session_state or st.session_state.current_mbti != selected or 
+        "current_gender" not in st.session_state or st.session_state.current_gender != gender or
+        "current_situation" not in st.session_state or st.session_state.current_situation != situation):
+        
         st.session_state.current_mbti = selected
-        st.session_state.messages = [{"role": "assistant", "content": f"안녕! 난 {selected}야. 나에 대해 궁금한 거 있어? 😉", "is_edited": False, "original": ""}]
+        st.session_state.current_gender = gender
+        st.session_state.current_situation = situation
+        st.session_state.messages = [{"role": "assistant", "content": f"안녕! 난 {selected}야. 지금 우리 '{situation}'에 있네? 궁금한 거 있어? 😉", "is_edited": False, "original": ""}]
 
     st.markdown("---")
 
@@ -106,7 +130,7 @@ if mbti_keys:
             else:
                 st.markdown(msg["content"])
 
-    user_input = st.chat_input(f"{selected}에게 메시지 보내기...")
+    user_input = st.chat_input(f"[{situation}]에서 {selected}에게 메시지 보내기...")
 
     if user_input:
         if not api_key:
