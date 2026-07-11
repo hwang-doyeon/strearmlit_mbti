@@ -76,12 +76,29 @@ if mbti_keys:
     with col2:
         gender = st.radio("나의 성별을 선택하세요:", ["남자", "여자"], horizontal=True)
         
-    # 주관식 상황/위치 설정 입력창
-    situation = st.text_input(
-        "현재 대화하고 있는 장소나 분위기를 적어주세요:", 
-        value="아늑한 카페", 
-        placeholder="예시: 비 내리는 수영장, 시끄러운 길 한복판, 어색한 소개팅 자리 등"
-    )
+    # [추가] 2층 레이아웃: AI 얼굴(아이콘) 선택 리스트
+    icon_options = {
+        "❓ 물음표": "❓",
+        "👩 여자 사람": "👩",
+        "👨 남자 사람": "👨",
+        "🤖 로봇": "🤖",
+        "🔵 동그라미": "🔵",
+        "🟩 네모": "🟩",
+        "🔥 불": "🔥",
+        "🌳 나무": "🌳"
+    }
+    
+    col3, col4 = st.columns([1, 1])
+    with col3:
+        selected_icon_name = st.selectbox("AI의 얼굴(아이콘)을 골라주세요:", list(icon_options.keys()), index=3)
+        ai_avatar = icon_options[selected_icon_name]
+        
+    with col4:
+        situation = st.text_input(
+            "장소나 분위기를 적어주세요:", 
+            value="아늑한 카페", 
+            placeholder="예시: 수영장, 길 한복판 등"
+        )
 
     info = data[selected]
     
@@ -122,9 +139,10 @@ if mbti_keys:
 
     st.markdown("---")
 
-    # 기존 대화 출력 (수정된 답변은 다르게 표시)
+    # 기존 대화 출력 (선택한 ai_avatar 적용)
     for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
+        avatar = "user" if msg["role"] == "user" else ai_avatar
+        with st.chat_message(msg["role"], avatar=avatar):
             if msg.get("is_edited"):
                 st.write(f"{msg['content']} *(수정됨)* ⚠️", help=f"🚨 원본 대답: {msg['original']}")
             else:
@@ -157,7 +175,7 @@ if mbti_keys:
                     
                 chat = model.start_chat(history=history)
                 
-                with st.chat_message("assistant"):
+                with st.chat_message("assistant", avatar=ai_avatar):
                     response = chat.send_message(user_input)
                     ai_reply = response.text
                     
