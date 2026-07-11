@@ -109,7 +109,7 @@ if mbti_keys:
                 genai.configure(api_key=api_key)
                 
                 # 모델 및 시스템 프롬프트(페르소나) 적용
-                model = genai.GenerativeModel('gemini-1.5-flash-latest', system_instruction=system_prompt)
+                model = genai.GenerativeModel('gemini-3.5-flash', system_instruction=system_prompt)
                 
                 # 이전 대화 기록을 제미나이 형식에 맞게 변환하여 전달
                 history = []
