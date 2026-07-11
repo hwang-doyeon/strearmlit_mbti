@@ -1,3 +1,7 @@
+from streamlit.proto import ArrowVegaLiteChart_pb2
+from streamlit.proto import ArrowVegaLiteChart_pb2
+from mbti_app import col4
+from mbti_app import col3
 import streamlit as st
 import json
 import google.generativeai as genai
@@ -85,7 +89,18 @@ if mbti_keys:
         "🔵 동그라미": "🔵",
         "🟩 네모": "🟩",
         "🔥 불": "🔥",
-        "🌳 나무": "🌳"
+        "🌳 나무": "🌳",
+        "😄 웃는 사람": "😄",
+        "😉 윙크하는 사람": "😉",
+        "😋 맛있는 걸 먹는 사람": "😋",
+        "🌈 무지개": "🌈",
+        "🪨 돌": "🪨",
+        "😎 멋쟁이": "😎",
+        "🥰 하트 뿅뿅": "🥰",
+        "👽 외계인": "👽",
+        "👻 유령": "👻",
+        "🐱 고양이": "🐱",
+        "🐶 강아지": "🐶"
     }
     
     col3, col4 = st.columns([1, 1])
