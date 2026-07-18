@@ -46,6 +46,62 @@ st.markdown("""
     hr {
         border-color: rgba(255, 255, 255, 0.1) !important;
     }
+    
+    /* ====== 버튼 스타일 (추천 멘트 버튼 포함) ====== */
+    div.stButton > button {
+        background-color: #2d3148 !important;
+        color: #e2e8f0 !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 8px !important;
+        transition: all 0.2s ease;
+    }
+    div.stButton > button:hover {
+        background-color: #3d4270 !important;
+        color: #ffffff !important;
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 10px rgba(99, 102, 241, 0.3) !important;
+    }
+
+    /* ====== Expander (접이식 박스) 배경 ====== */
+    [data-testid="stExpander"] {
+        background-color: #13151f !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 10px !important;
+    }
+    [data-testid="stExpander"] summary,
+    [data-testid="stExpander"] summary span,
+    [data-testid="stExpander"] p {
+        color: #cbd5e1 !important;
+    }
+
+    /* ====== Selectbox 드롭다운 메뉴 배경 ====== */
+    [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+        background-color: #1e2030 !important;
+        color: #e2e8f0 !important;
+        border-color: rgba(255,255,255,0.15) !important;
+    }
+
+    /* ====== 전반적인 흰색 카드/박스 배경 통합 처리 ====== */
+    [data-testid="stVerticalBlock"] > div,
+    [data-testid="stHorizontalBlock"] > div {
+        color: #e2e8f0;
+    }
+
+    /* selectbox 옵션 리스트 */
+    ul[data-testid="stSelectboxVirtualDropdown"] li {
+        background-color: #1e2030 !important;
+        color: #e2e8f0 !important;
+    }
+
+    /* 궁합 탭의 markdown 텍스트 및 expander 내용 */
+    .streamlit-expanderContent {
+        background-color: #13151f !important;
+    }
+    .streamlit-expanderContent p,
+    .streamlit-expanderContent span,
+    .streamlit-expanderContent div {
+        color: #cbd5e1 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
