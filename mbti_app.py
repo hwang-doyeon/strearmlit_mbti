@@ -72,7 +72,11 @@ if mbti_keys:
     # 레이아웃 구성
     col1, col2 = st.columns(2)
     with col1:
-        selected = st.selectbox("대화할 MBTI 친구를 고르세요:", mbti_keys)
+        selected = st.selectbox(
+            "대화할 MBTI 친구를 고르세요:",
+            mbti_keys,
+            format_func=lambda x: f"{x} ({data[x].get('tone', '')})" if data.get(x) else x
+        )
     with col2:
         gender = st.radio("나의 성별을 선택하세요:", ["남자", "여자"], horizontal=True)
         
