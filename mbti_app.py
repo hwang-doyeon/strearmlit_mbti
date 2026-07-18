@@ -221,8 +221,8 @@ if mbti_keys:
                     # 제미나이 API 설정
                     genai.configure(api_key=api_key)
                     
-                    # 모델 및 시스템 프롬프트(페르소나) 적용 (안정적인 gemini-1.5-flash 모델 적용)
-                    model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_prompt)
+                    # 모델 및 시스템 프롬프트(페르소나) 적용 (안정적인 gemini-2.5-flash 모델 적용)
+                    model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=system_prompt)
                     
                     # 이전 대화 기록을 제미나이 형식에 맞게 변환하여 전달
                     history = []
@@ -234,7 +234,7 @@ if mbti_keys:
                     chat = model.start_chat(history=history)
                     
                     with st.chat_message("assistant", avatar=ai_avatar):
-                        response = chat.send_message(user_input)
+                        response = chat.send_message(active_input)
                         ai_reply = response.text
                         
                         # 나쁜 말 필터링 검사 시스템
