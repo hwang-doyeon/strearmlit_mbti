@@ -102,6 +102,25 @@ st.markdown("""
     .streamlit-expanderContent div {
         color: #cbd5e1 !important;
     }
+
+    /* ====== Expander 헤더(버튼) 스타일: 최강의 조합/좋은 조합/보통/주의/최악 등 ====== */
+    [data-testid="stExpander"] details summary {
+        background-color: #2d3148 !important;
+        color: #e2e8f0 !important;
+        border-radius: 8px !important;
+        padding: 8px 14px !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        transition: all 0.2s ease;
+    }
+    [data-testid="stExpander"] details summary:hover {
+        background-color: #3d4270 !important;
+        color: #ffffff !important;
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 10px rgba(99, 102, 241, 0.25) !important;
+    }
+    [data-testid="stExpander"] details summary svg {
+        fill: #e2e8f0 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
