@@ -49,6 +49,60 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# 상황 및 대화 기록을 바탕으로 추천 멘트 3가지를 생성하는 함수
+def generate_recommendations(messages, selected, situation, info, best_mbti, api_key):
+    default_recs = [
+        f"너는 {info.get('desc', '그 성격')}답게 진짜 매력 넘치는 것 같아. 보통 어떤 칭찬 좋아해?",
+        f"지금 '{situation}'에 있으니까 느낌이 묘하네. 여기서 우리 무슨 얘기 해볼까?",
+        f"너는 {best_mbti}랑 제일 궁합이 좋다며? {best_mbti}의 어떤 점이 좋아?"
+    ]
+    if not api_key:
+        return default_recs
+    
+    try:
+        genai.configure(api_key=api_key)
+        # 404가 나지 않는 최신 모델 gemini-3.5-flash 사용
+        rec_model = genai.GenerativeModel('gemini-3.5-flash')
+        
+        # 이전 대화 내용 텍스트화
+        history_text = ""
+        for m in messages:
+            role_name = "상대방" if m['role'] == "user" else f"너({selected})"
+            history_text += f"{role_name}: {m['content']}\n"
+            
+        prompt = f"""
+        너는 '{selected}' 유형({info['desc']}, 말투: {info.get('tone', '친근한 반말')})인 사람과 대화 중인 유저의 입장에서 대화를 이어갈 때 할 수 있는 다음 말(답장) 3가지를 추천해줘야 해.
+        
+        [대화 환경 및 상대방 정보]
+        - 상대방 유형: '{selected}'
+        - 현재 대화 상황/분위기: '{situation}'
+        
+        [지금까지의 대화 기록]
+        {history_text}
+        
+        [요구사항]
+        1. 대화 흐름상 아주 자연스럽고, 상황에 어울리며, 상대방 '{selected}'의 흥미나 감정을 자극할 만한 대답/질문 3가지를 만들어줘.
+        2. 말투는 친근한 어조로, 사용자가 선택해서 바로 보낼 수 있게 완성된 한 문장 형식이어야 해.
+        3. 마크다운 기호 없이 오직 JSON 리스트 형식으로만 답변해줘. 다른 설명이나 텍스트는 절대 포함하지 마.
+        예시: ["여기 진짜 분위기 좋다!", "너는 취미가 뭐야?", "다음엔 우리 뭐할까?"]
+        """
+        
+        response = rec_model.generate_content(prompt)
+        text = response.text.strip()
+        
+        # JSON 블록 기호 제거
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0].strip()
+        elif "```" in text:
+            text = text.split("```")[1].split("```")[0].strip()
+            
+        recs = json.loads(text)
+        if isinstance(recs, list) and len(recs) >= 3:
+            return recs[:3]
+    except Exception as e:
+        pass
+    return default_recs
+
 # API 키 로드 (st.secrets 우선 사용, 없으면 사이드바 입력)
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
@@ -190,6 +244,11 @@ if mbti_keys:
             sit_text = f"지금 우리 '{sit_clean}'에 있네?"
 
         st.session_state.messages = [{"role": "assistant", "content": f"안녕! 난 {selected}야. {sit_text} 궁금한 거 있어? 😉", "is_edited": False, "original": ""}]
+        st.session_state.recommendations = [
+            f"너는 {info.get('desc', '그 성격')}답게 진짜 매력 넘치는 것 같아. 보통 어떤 칭찬 좋아해?",
+            f"지금 '{situation}'에 있으니까 느낌이 묘하네. 여기서 우리 무슨 얘기 해볼까?",
+            f"너는 {best_mbti}랑 제일 궁합이 좋다며? {best_mbti}의 어떤 점이 좋아?"
+        ]
 
     st.markdown("---")
 
@@ -208,17 +267,26 @@ if mbti_keys:
 
         # 추천 멘트 영역 추가
         clicked_msg = None
+        
+        if "recommendations" not in st.session_state:
+            st.session_state.recommendations = [
+                f"너는 {info.get('desc', '그 성격')}답게 진짜 매력 넘치는 것 같아. 보통 어떤 칭찬 좋아해?",
+                f"지금 '{situation}'에 있으니까 느낌이 묘하네. 여기서 우리 무슨 얘기 해볼까?",
+                f"너는 {best_mbti}랑 제일 궁합이 좋다며? {best_mbti}의 어떤 점이 좋아?"
+            ]
+
         with st.expander("💡 할 말 없을 때? 추천 멘트 보기"):
-            rec_1 = f"너는 {info.get('desc', '그 성격')}답게 진짜 매력 넘치는 것 같아. 보통 어떤 칭찬 좋아해?"
-            rec_2 = f"지금 '{situation}'에 있으니까 느낌이 묘하네. 여기서 우리 무슨 얘기 해볼까?"
-            rec_3 = f"너는 {best_mbti}랑 제일 궁합이 좋다며? {best_mbti}의 어떤 점이 좋아?"
-            
-            if st.button(f"1️⃣ {rec_1}", use_container_width=True):
-                clicked_msg = rec_1
-            if st.button(f"2️⃣ {rec_2}", use_container_width=True):
-                clicked_msg = rec_2
-            if st.button(f"3️⃣ {rec_3}", use_container_width=True):
-                clicked_msg = rec_3
+            recs = st.session_state.recommendations
+            # 3개가 안 채워졌을 때를 대비한 패딩
+            while len(recs) < 3:
+                recs.append("우리 재미있는 이야기 더 해보자!")
+                
+            if st.button(f"1️⃣ {recs[0]}", use_container_width=True):
+                clicked_msg = recs[0]
+            if st.button(f"2️⃣ {recs[1]}", use_container_width=True):
+                clicked_msg = recs[1]
+            if st.button(f"3️⃣ {recs[2]}", use_container_width=True):
+                clicked_msg = recs[2]
 
         user_input = st.chat_input(f"[{situation}]에서 {selected}에게 메시지 보내기...")
         active_input = user_input or clicked_msg
@@ -236,8 +304,8 @@ if mbti_keys:
                     # 제미나이 API 설정
                     genai.configure(api_key=api_key)
                     
-                    # 모델 및 시스템 프롬프트(페르소나) 적용 (안정적인 gemini-2.5-flash 모델 적용)
-                    model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=system_prompt)
+                    # 모델 및 시스템 프롬프트(페르소나) 적용 (안정적인 gemini-3.5-flash 모델 적용)
+                    model = genai.GenerativeModel('gemini-3.5-flash', system_instruction=system_prompt)
                     
                     # 이전 대화 기록을 제미나이 형식에 맞게 변환하여 전달
                     history = []
@@ -269,6 +337,12 @@ if mbti_keys:
                             st.session_state.messages.append({
                                 "role": "assistant", "content": ai_reply, "is_edited": False, "original": ""
                             })
+                        
+                        # 다음 대화를 위한 맞춤 추천 멘트 3개 백그라운드 생성
+                        st.session_state.recommendations = generate_recommendations(
+                            st.session_state.messages, selected, situation, info, best_mbti, api_key
+                        )
+                        st.rerun()
                     
                 except Exception as e:
                     st.error(f"API 호출 중 오류가 발생했습니다: {e}")
