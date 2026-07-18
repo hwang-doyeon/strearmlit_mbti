@@ -193,63 +193,130 @@ if mbti_keys:
 
     st.markdown("---")
 
-    # 기존 대화 출력 (선택한 ai_avatar 및 user_avatar 적용)
-    for msg in st.session_state.messages:
-        avatar = user_avatar if msg["role"] == "user" else ai_avatar
-        with st.chat_message(msg["role"], avatar=avatar):
-            if msg.get("is_edited"):
-                st.write(f"{msg['content']} *(수정됨)* ⚠️", help=f"🚨 원본 대답: {msg['original']}")
+    # 탭 메뉴 정의 (1. 채팅 2. 궁합 정보)
+    tab1, tab2 = st.tabs(["💬 1:1 MBTI 채팅", "🧩 MBTI 궁합 & 대화 꿀팁"])
+
+    with tab1:
+        # 기존 대화 출력 (선택한 ai_avatar 및 user_avatar 적용)
+        for msg in st.session_state.messages:
+            avatar = user_avatar if msg["role"] == "user" else ai_avatar
+            with st.chat_message(msg["role"], avatar=avatar):
+                if msg.get("is_edited"):
+                    st.write(f"{msg['content']} *(수정됨)* ⚠️", help=f"🚨 원본 대답: {msg['original']}")
+                else:
+                    st.markdown(msg["content"])
+
+        user_input = st.chat_input(f"[{situation}]에서 {selected}에게 메시지 보내기...")
+
+        if user_input:
+            if not api_key:
+                st.warning("👈 왼쪽 사이드바에 복사해둔 Gemini API Key를 먼저 붙여넣어 주세요!")
             else:
-                st.markdown(msg["content"])
+                # 사용자 메시지 저장 및 출력
+                st.session_state.messages.append({"role": "user", "content": user_input, "is_edited": False, "original": ""})
+                with st.chat_message("user", avatar=user_avatar):
+                    st.markdown(user_input)
 
-    user_input = st.chat_input(f"[{situation}]에서 {selected}에게 메시지 보내기...")
-
-    if user_input:
-        if not api_key:
-            st.warning("👈 왼쪽 사이드바에 복사해둔 Gemini API Key를 먼저 붙여넣어 주세요!")
-        else:
-            # 사용자 메시지 저장 및 출력
-            st.session_state.messages.append({"role": "user", "content": user_input, "is_edited": False, "original": ""})
-            with st.chat_message("user", avatar=user_avatar):
-                st.markdown(user_input)
-
-            try:
-                # 제미나이 API 설정
-                genai.configure(api_key=api_key)
-                
-                # 모델 및 시스템 프롬프트(페르소나) 적용
-                model = genai.GenerativeModel('gemini-3.5-flash', system_instruction=system_prompt)
-                
-                # 이전 대화 기록을 제미나이 형식에 맞게 변환하여 전달
-                history = []
-                for msg in st.session_state.messages[:-1]: 
-                    role = "model" if msg["role"] == "assistant" else "user"
-                    content = msg["original"] if msg.get("is_edited") else msg["content"]
-                    history.append({"role": role, "parts": [content]})
+                try:
+                    # 제미나이 API 설정
+                    genai.configure(api_key=api_key)
                     
-                chat = model.start_chat(history=history)
-                
-                with st.chat_message("assistant", avatar=ai_avatar):
-                    response = chat.send_message(user_input)
-                    ai_reply = response.text
+                    # 모델 및 시스템 프롬프트(페르소나) 적용 (안정적인 gemini-1.5-flash 모델 적용)
+                    model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_prompt)
                     
-                    # 나쁜 말 필터링 검사 시스템
-                    is_bad = any(bad_word in ai_reply for bad_word in BAD_WORDS)
-                    
-                    if is_bad:
-                        import random
-                        original_reply = ai_reply 
-                        safe_reply = random.choice(GOOD_WORDS) 
+                    # 이전 대화 기록을 제미나이 형식에 맞게 변환하여 전달
+                    history = []
+                    for msg in st.session_state.messages[:-1]: 
+                        role = "model" if msg["role"] == "assistant" else "user"
+                        content = msg["original"] if msg.get("is_edited") else msg["content"]
+                        history.append({"role": role, "parts": [content]})
                         
-                        st.write(f"{safe_reply} *(수정됨)* ⚠️", help=f"🚨 원본 대답: {original_reply}")
-                        st.session_state.messages.append({
-                            "role": "assistant", "content": safe_reply, "is_edited": True, "original": original_reply
-                        })
-                    else:
-                        st.markdown(ai_reply)
-                        st.session_state.messages.append({
-                            "role": "assistant", "content": ai_reply, "is_edited": False, "original": ""
-                        })
-                
-            except Exception as e:
-                st.error(f"API 호출 중 오류가 발생했습니다: {e}")
+                    chat = model.start_chat(history=history)
+                    
+                    with st.chat_message("assistant", avatar=ai_avatar):
+                        response = chat.send_message(user_input)
+                        ai_reply = response.text
+                        
+                        # 나쁜 말 필터링 검사 시스템
+                        is_bad = any(bad_word in ai_reply for bad_word in BAD_WORDS)
+                        
+                        if is_bad:
+                            import random
+                            original_reply = ai_reply 
+                            safe_reply = random.choice(GOOD_WORDS) 
+                            
+                            st.write(f"{safe_reply} *(수정됨)* ⚠️", help=f"🚨 원본 대답: {original_reply}")
+                            st.session_state.messages.append({
+                                "role": "assistant", "content": safe_reply, "is_edited": True, "original": original_reply
+                            })
+                        else:
+                            st.markdown(ai_reply)
+                            st.session_state.messages.append({
+                                "role": "assistant", "content": ai_reply, "is_edited": False, "original": ""
+                            })
+                    
+                except Exception as e:
+                    st.error(f"API 호출 중 오류가 발생했습니다: {e}")
+
+    with tab2:
+        st.subheader(f"🧩 {selected} (기준) 유형과의 MBTI 궁합 분석")
+        st.write("모든 MBTI 유형과의 매칭 상태를 분류하고, 각 유형이 선호하는 말투와 행동 팁을 정리했습니다. 친해지고 싶은 상대의 MBTI를 눌러보세요!")
+
+        # 궁합 등급 계산 함수
+        def get_compatibility_info(t1, t2):
+            # 천생연분 (best match)
+            if data.get(t1, {}).get("best") == t2 or data.get(t2, {}).get("best") == t1:
+                return "💖 최상의 궁합 (천생연분)", 4
+            
+            # 매칭 글자 수 계산 (E/I, S/N, T/F, J/P)
+            score = sum(1 for c1, c2 in zip(t1, t2) if c1 == c2)
+            if score == 4:
+                return "🌟 아주 좋은 궁합 (찰떡궁합)", 3
+            elif score == 3:
+                return "🌟 좋은 궁합 (친해지기 쉬워요)", 3
+            elif score == 2:
+                return "⛅ 보통의 궁합 (무난무난해요)", 2
+            elif score == 1:
+                return "⚠️ 다소 주의 (노력이 필요해요)", 1
+            else:
+                return "🚨 최악의 궁합 (서로 많이 달라요)", 0
+
+        # 유형별 그룹 생성
+        groups = {
+            "💖 최상의 궁합 (천생연분)": [],
+            "🌟 좋은 궁합": [],
+            "⛅ 보통의 궁합": [],
+            "⚠️ 다소 주의": [],
+            "🚨 최악의 궁합": []
+        }
+
+        for key in mbti_keys:
+            compat_str, score = get_compatibility_info(selected, key)
+            if "최상의" in compat_str:
+                groups["💖 최상의 궁합 (천생연분)"].append((key, data[key]))
+            elif "좋은" in compat_str:
+                groups["🌟 좋은 궁합"].append((key, data[key]))
+            elif "보통" in compat_str:
+                groups["⛅ 보통의 궁합"].append((key, data[key]))
+            elif "주의" in compat_str:
+                groups["⚠️ 다소 주의"].append((key, data[key]))
+            else:
+                groups["🚨 최악의 궁합"].append((key, data[key]))
+
+        # 각 그룹별로 expander 형태로 출력
+        for group_name, items in groups.items():
+            if items:
+                with st.expander(f"{group_name} ({len(items)}개 유형)", expanded=(group_name == "💖 최상의 궁합 (천생연분)")):
+                    for mbti_type, details in items:
+                        st.markdown(f"### **{mbti_type}** | {details['desc']}")
+                        
+                        # 대화 팁을 가로 칼럼 형식으로 정렬하여 배치
+                        col_tip1, col_tip2 = st.columns(2)
+                        with col_tip1:
+                            st.markdown(f"🗣️ **선호하는 말투:** {details.get('tone', '알 수 없음')}")
+                            st.markdown(f"📍 **추천 만남 장소:** {details.get('place', '알 수 없음')}")
+                        with col_tip2:
+                            st.markdown(f"💬 **들으면 좋아하는 칭찬:** \"{details.get('cheer_up', '알 수 없음')}\"")
+                            st.markdown(f"❌ **하면 싫어하는 행동:** {details.get('dont_do', '알 수 없음')}")
+                        
+                        st.markdown("<hr style='margin: 10px 0; opacity: 0.15;'>", unsafe_allow_html=True)
