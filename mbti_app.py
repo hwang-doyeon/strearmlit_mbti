@@ -194,7 +194,7 @@ if mbti_keys:
     st.markdown("---")
 
     # 탭 메뉴 정의 (1. 채팅 2. 궁합 정보)
-    tab1, tab2 = st.tabs(["💬 1:1 MBTI 채팅", "🧩 MBTI 궁합 & 대화 꿀팁"])
+    tab1, tab2 = st.tabs(["💬 1:1 MBTI 채팅", "🔗 MBTI 궁합 & 대화 꿀팁"])
 
     with tab1:
         # 기존 대화 출력 (선택한 ai_avatar 및 user_avatar 적용)
