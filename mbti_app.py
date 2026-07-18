@@ -206,16 +206,31 @@ if mbti_keys:
                 else:
                     st.markdown(msg["content"])
 
-        user_input = st.chat_input(f"[{situation}]에서 {selected}에게 메시지 보내기...")
+        # 추천 멘트 영역 추가
+        clicked_msg = None
+        with st.expander("💡 할 말 없을 때? 추천 멘트 보기"):
+            rec_1 = f"너는 {info.get('desc', '그 성격')}답게 진짜 매력 넘치는 것 같아. 보통 어떤 칭찬 좋아해?"
+            rec_2 = f"지금 '{situation}'에 있으니까 느낌이 묘하네. 여기서 우리 무슨 얘기 해볼까?"
+            rec_3 = f"너는 {best_mbti}랑 제일 궁합이 좋다며? {best_mbti}의 어떤 점이 좋아?"
+            
+            if st.button(f"1️⃣ {rec_1}", use_container_width=True):
+                clicked_msg = rec_1
+            if st.button(f"2️⃣ {rec_2}", use_container_width=True):
+                clicked_msg = rec_2
+            if st.button(f"3️⃣ {rec_3}", use_container_width=True):
+                clicked_msg = rec_3
 
-        if user_input:
+        user_input = st.chat_input(f"[{situation}]에서 {selected}에게 메시지 보내기...")
+        active_input = user_input or clicked_msg
+
+        if active_input:
             if not api_key:
                 st.warning("👈 왼쪽 사이드바에 복사해둔 Gemini API Key를 먼저 붙여넣어 주세요!")
             else:
                 # 사용자 메시지 저장 및 출력
-                st.session_state.messages.append({"role": "user", "content": user_input, "is_edited": False, "original": ""})
+                st.session_state.messages.append({"role": "user", "content": active_input, "is_edited": False, "original": ""})
                 with st.chat_message("user", avatar=user_avatar):
-                    st.markdown(user_input)
+                    st.markdown(active_input)
 
                 try:
                     # 제미나이 API 설정
